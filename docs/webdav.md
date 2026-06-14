@@ -29,6 +29,11 @@ tool raises a clear error when full-text search is not available.
 # Find documents whose contents mention "quarterly revenue"
 hits = await nc_files_full_text_search("quarterly revenue", limit=5)
 # -> each hit: {path, snippet, resource_url}; read one with nc_webdav_read_file
+
+# Exact-phrase match (words contiguous, in order) — far more precise:
+hits = await nc_files_full_text_search(
+    "View properties and access change history", exact_phrase=True
+)
 ```
 
 ### WebDAV File System Access

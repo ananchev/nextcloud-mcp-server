@@ -23,7 +23,7 @@ class SearchClient(BaseNextcloudClient):
 
     @retry_on_429
     async def full_text_search(
-        self, query: str, limit: int | None = None
+        self, query: str, limit: int | None = None, exact_phrase: bool = False
     ) -> list[dict[str, Any]]:
         """Search file *contents* via the ``fulltextsearch`` search provider.
 
@@ -36,6 +36,10 @@ class SearchClient(BaseNextcloudClient):
         Args:
             query: Free-text query to match against indexed file contents.
             limit: Maximum number of results to return.
+            exact_phrase: When True, match the query as a contiguous phrase
+                (the words in that order) rather than the individual words
+                independently. Implemented with the provider's quoted-phrase
+                syntax; any double quotes already in ``query`` are stripped.
 
         Returns:
             A list of ``{"snippet", "path", "resource_url"}`` dicts, one per hit.
@@ -45,7 +49,8 @@ class SearchClient(BaseNextcloudClient):
                 fulltextsearch provider is not installed).
             RuntimeError: If the OCS envelope reports a non-success status.
         """
-        params: dict[str, Any] = {"term": query}
+        term = f'"{query.replace(chr(34), "")}"' if exact_phrase else query
+        params: dict[str, Any] = {"term": term}
         if limit is not None:
             params["limit"] = limit
 

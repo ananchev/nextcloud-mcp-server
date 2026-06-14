@@ -64,6 +64,32 @@ async def test_full_text_search_maps_entries(mocker):
     assert kwargs["params"] == {"term": "revenue", "limit": 5}
 
 
+async def test_full_text_search_exact_phrase_quotes_term(mocker):
+    """exact_phrase wraps the query in quotes (provider phrase syntax)."""
+    client = _make_client(mocker)
+    resp = mocker.Mock()
+    resp.json.return_value = _ocs([])
+    client._make_request = AsyncMock(return_value=resp)
+
+    await client.full_text_search('access change history', exact_phrase=True)
+
+    assert client._make_request.await_args.kwargs["params"] == {
+        "term": '"access change history"'
+    }
+
+
+async def test_full_text_search_exact_phrase_strips_embedded_quotes(mocker):
+    """Embedded double quotes are stripped so they can't break the phrase syntax."""
+    client = _make_client(mocker)
+    resp = mocker.Mock()
+    resp.json.return_value = _ocs([])
+    client._make_request = AsyncMock(return_value=resp)
+
+    await client.full_text_search('say "hi" now', exact_phrase=True)
+
+    assert client._make_request.await_args.kwargs["params"] == {"term": '"say hi now"'}
+
+
 async def test_full_text_search_keeps_snippet_without_prefix(mocker):
     """A snippet that lacks the '(files) ' prefix is returned unchanged."""
     client = _make_client(mocker)

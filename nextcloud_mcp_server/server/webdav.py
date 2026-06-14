@@ -517,7 +517,7 @@ def configure_webdav_tools(mcp: FastMCP):
     @require_scopes("files.read")
     @instrument_tool
     async def nc_files_full_text_search(
-        ctx: Context, query: str, limit: int = 5
+        ctx: Context, query: str, limit: int = 5, exact_phrase: bool = False
     ) -> FullTextSearchResponse:
         """Search the *contents* of files in NextCloud (full-text search).
 
@@ -533,6 +533,13 @@ def configure_webdav_tools(mcp: FastMCP):
         Args:
             query: Free-text query to match against file contents.
             limit: Maximum number of results to return (default 5).
+            exact_phrase: Set True when the user asks for an *exact phrase* /
+                quoted string. The words are then matched contiguously in order
+                rather than independently, which is far more precise — a
+                multi-word phrase typically collapses from many loose
+                candidates to only the documents that actually contain it. Note
+                the returned snippet is a content excerpt and may not itself
+                show the phrase even on a true match.
 
         Returns:
             FullTextSearchResponse with matching files and content snippets.
@@ -540,7 +547,9 @@ def configure_webdav_tools(mcp: FastMCP):
         client = await get_client(ctx)
 
         try:
-            hits = await client.search.full_text_search(query, limit=limit)
+            hits = await client.search.full_text_search(
+                query, limit=limit, exact_phrase=exact_phrase
+            )
         except HTTPStatusError as e:
             if e.response.status_code == 404:
                 raise ToolError(
