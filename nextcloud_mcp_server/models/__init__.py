@@ -70,6 +70,8 @@ from .webdav import (
     DeleteResourceResponse,
     DirectoryListing,
     FileInfo,
+    FullTextSearchResponse,
+    FullTextSearchResult,
     MoveResourceResponse,
     ReadFileResponse,
     SearchFilesResponse,
@@ -139,4 +141,6 @@ __all__ = [
     "MoveResourceResponse",
     "CopyResourceResponse",
     "SearchFilesResponse",
+    "FullTextSearchResult",
+    "FullTextSearchResponse",
 ]

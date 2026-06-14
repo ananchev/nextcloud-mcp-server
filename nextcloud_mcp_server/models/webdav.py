@@ -119,3 +119,23 @@ class SearchFilesResponse(BaseResponse):
     filters_applied: Optional[dict] = Field(
         None, description="Filters that were applied to the search"
     )
+
+
+class FullTextSearchResult(BaseModel):
+    """A single full-text content-search hit."""
+
+    path: str = Field(
+        description="File path relative to the user's files root"
+    )
+    snippet: str = Field(description="Matched content excerpt from the file")
+    resource_url: Optional[str] = Field(
+        None, description="Nextcloud web URL linking to the matched file"
+    )
+
+
+class FullTextSearchResponse(BaseResponse):
+    """Response model for full-text content search operations."""
+
+    results: List[FullTextSearchResult] = Field(description="Search results")
+    total_found: int = Field(description="Number of matches returned")
+    query: str = Field(description="The query that was searched")

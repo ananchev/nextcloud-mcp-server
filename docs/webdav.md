@@ -11,6 +11,25 @@
 | `nc_webdav_delete_resource` | Delete files or directories |
 | `nc_webdav_move_resource` | Move or rename files and directories |
 | `nc_webdav_copy_resource` | Copy files and directories |
+| `nc_files_full_text_search` | Search file **contents** (full-text), returning a snippet + path per hit |
+
+### Full-Text Content Search
+
+`nc_files_full_text_search` searches the indexed *contents* of files —
+including text extracted from PDFs and Office documents — rather than just
+file names and MIME types like the WebDAV search tools. Each hit returns a
+content snippet and the file path, which you can pass straight to
+`nc_webdav_read_file`.
+
+It requires the [`files_fulltextsearch`](https://apps.nextcloud.com/apps/fulltextsearch)
+app and a configured search platform (e.g. Elasticsearch) on the server; the
+tool raises a clear error when full-text search is not available.
+
+```python
+# Find documents whose contents mention "quarterly revenue"
+hits = await nc_files_full_text_search("quarterly revenue", limit=5)
+# -> each hit: {path, snippet, resource_url}; read one with nc_webdav_read_file
+```
 
 ### WebDAV File System Access
 

@@ -953,6 +953,7 @@ tag names to file paths and applies the following:
 | `nc_webdav_search_files` | Excluded files are filtered from results |
 | `nc_webdav_find_by_name` | Excluded files are filtered from results |
 | `nc_webdav_find_by_type` | Excluded files are filtered from results |
+| `nc_files_full_text_search` | Excluded files are filtered from results |
 | `nc_webdav_list_favorites` | Excluded files are filtered from results |
 
 Tagging a **folder** hides the folder itself **and** every descendant

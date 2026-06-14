@@ -22,6 +22,7 @@ from .deck import DeckClient
 from .groups import GroupsClient
 from .news import NewsClient
 from .notes import NotesClient
+from .search import SearchClient
 from .sharing import SharingClient
 from .tables import TablesClient
 from .talk import TalkClient
@@ -148,6 +149,7 @@ class NextcloudClient:
         self.users = UsersClient(self._client, username)
         self.groups = GroupsClient(self._client, username)
         self.sharing = SharingClient(self._client, username)
+        self.search = SearchClient(self._client, username)
         self.webhooks = WebhooksClient(self._client, username)
 
         # Initialize controllers

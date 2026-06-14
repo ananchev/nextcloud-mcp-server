@@ -1,13 +1,20 @@
 import base64
 import logging
 
+from httpx import HTTPStatusError
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
 from nextcloud_mcp_server.auth import require_scopes
 from nextcloud_mcp_server.context import get_client
-from nextcloud_mcp_server.models import DirectoryListing, FileInfo, SearchFilesResponse
+from nextcloud_mcp_server.models import (
+    DirectoryListing,
+    FileInfo,
+    FullTextSearchResponse,
+    FullTextSearchResult,
+    SearchFilesResponse,
+)
 from nextcloud_mcp_server.observability.metrics import instrument_tool
 from nextcloud_mcp_server.server.tag_exclusion import (
     get_excluded_file_paths,
@@ -498,6 +505,61 @@ def configure_webdav_tools(mcp: FastMCP):
             total_found=len(file_infos),
             scope=scope,
             filters_applied=filters if filters else None,
+        )
+
+    @mcp.tool(
+        title="Full-Text Content Search",
+        annotations=ToolAnnotations(
+            readOnlyHint=True,
+            openWorldHint=True,
+        ),
+    )
+    @require_scopes("files.read")
+    @instrument_tool
+    async def nc_files_full_text_search(
+        ctx: Context, query: str, limit: int = 5
+    ) -> FullTextSearchResponse:
+        """Search the *contents* of files in NextCloud (full-text search).
+
+        Unlike ``nc_webdav_search_files`` — which matches only file names and
+        MIME types — this matches indexed document text, including text
+        extracted from PDFs and Office documents, and returns a content
+        snippet plus the file path for each hit. Feed a returned ``path`` into
+        ``nc_webdav_read_file`` to read the matching file.
+
+        Requires the ``files_fulltextsearch`` app and a configured search
+        platform (e.g. Elasticsearch) on the server.
+
+        Args:
+            query: Free-text query to match against file contents.
+            limit: Maximum number of results to return (default 5).
+
+        Returns:
+            FullTextSearchResponse with matching files and content snippets.
+        """
+        client = await get_client(ctx)
+
+        try:
+            hits = await client.search.full_text_search(query, limit=limit)
+        except HTTPStatusError as e:
+            if e.response.status_code == 404:
+                raise ToolError(
+                    "Full-text search is unavailable: the 'files_fulltextsearch' "
+                    "app is not enabled on this Nextcloud server."
+                ) from e
+            raise
+
+        # Honour EXCLUDED_TAGS so tagged-private file contents never leak via
+        # search, consistent with the WebDAV file tools.
+        excluded = await get_excluded_file_paths(client.webdav)
+        if excluded:
+            hits = [h for h in hits if not is_path_excluded(h["path"], excluded)]
+
+        results = [FullTextSearchResult(**hit) for hit in hits]
+        return FullTextSearchResponse(
+            results=results,
+            total_found=len(results),
+            query=query,
         )
 
     @mcp.tool(
